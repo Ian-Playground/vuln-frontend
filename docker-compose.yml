@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  vuln_frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vuln-frontend-container
+    env_file: .env
+    environment:
+      - NITRO_HOST=0.0.0.0
+      - NITRO_PORT=3000
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
