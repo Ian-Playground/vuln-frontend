@@ -39,9 +39,10 @@ const items = [
     to: '/vulnerabilities'
   },
   {
-    label: 'Help',
-    icon: 'i-lucide-circle-help',
-    disabled: true
+    label: 'Backend API Doc',
+    icon: 'i-heroicons-document-text',
+    to: 'http://localhost:8081/#/',
+    target: '_blank'
   }
 ]
 
