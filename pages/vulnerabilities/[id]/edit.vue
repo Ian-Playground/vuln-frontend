@@ -12,7 +12,7 @@
     </div>
     <VulnerabilityForm
       v-else
-      :vulnerability="vulnerability"
+      :initial-data="vulnerability"
       :is-edit="true"
       @submit="handleSubmit"
       @cancel="handleCancel"

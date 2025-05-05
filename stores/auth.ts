@@ -1,3 +1,4 @@
+import { useNuxtApp } from 'nuxt/app';
 import { defineStore } from 'pinia'
 
 export type User = {

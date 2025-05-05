@@ -28,6 +28,7 @@
 
     <div v-else>
       <UTable
+        v-model:column-pinning="columnPinning"
         :data="data?.data || []"
         :columns="columns"
         :loading="pending"
@@ -47,13 +48,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, h, resolveComponent } from 'vue'
+import { ref, computed, watch, h, resolveComponent, onMounted } from 'vue'
 import { format } from 'date-fns'
-import type { Vulnerability, TableColumn, PaginatedResponse } from '~/types/vulnerability'
+import type { Vulnerability, TableColumn, PaginatedResponse, OwaspCategory } from '~/types/vulnerability'
 import { useHttp } from '~/composables/useHttp'
 import { navigateTo } from '#app'
 import DeleteConfirmation from '~/components/vulnerabilities/DeleteConfirmation.vue'
 import { useOverlay } from '#imports'
+import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
   middleware: ['auth']
@@ -70,6 +72,11 @@ const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 const UPopover = resolveComponent('UPopover')
 const UIcon = resolveComponent('UIcon')
+
+const columnPinning = ref({
+  left: [],
+  right: ['actions']
+})
 
 const columns: TableColumn<Vulnerability>[] = [
   {
@@ -92,6 +99,14 @@ const columns: TableColumn<Vulnerability>[] = [
       const status = row.getValue('status') as Vulnerability['status']
       const color = getStatusColor(status)
       return h(UBadge, { color, variant: 'subtle' }, () => status)
+    }
+  },
+  {
+    accessorKey: 'owasp_category',
+    header: 'OWASP Category',
+    cell: ({ row }) => {
+      const category = row.getValue('owasp_category') as OwaspCategory
+      return category ? `${category.code} - ${category.name}` : 'N/A'
     }
   },
   {
@@ -121,18 +136,26 @@ const columns: TableColumn<Vulnerability>[] = [
     accessorKey: 'actions',
     header: 'Actions',
     cell: ({ row }) => {
+      const vulnerability = row.original
+      const auth = useAuthStore()
+      const isCreator = vulnerability.user.ulid === auth.user.ulid
+
+      if (!isCreator) {
+        return "-"
+      }
+
       return h('div', { class: 'flex gap-2' }, [
         h(UButton, {
           icon: 'i-heroicons-pencil-square',
           color: 'gray',
           variant: 'ghost',
-          onClick: () => navigateTo(`/vulnerabilities/${row.original.id}/edit`)
+          onClick: () => navigateTo(`/vulnerabilities/${vulnerability.id}/edit`)
         }),
         h(UButton, {
           icon: 'i-heroicons-trash',
           color: 'red',
           variant: 'ghost',
-          onClick: () => openDeleteModal(row.original)
+          onClick: () => openDeleteModal(vulnerability)
         })
       ])
     }
@@ -156,7 +179,6 @@ const { data, pending, error, refresh } = await useHttp<PaginatedResponse<Vulner
     return transformed
   }
 })
-
 
 const getSeverityColor = (severity: Vulnerability['severity']): string => {
   const colors: Record<Vulnerability['severity'], string> = {
